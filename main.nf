@@ -33,12 +33,12 @@ def helpMsg() {
     
 	Pipeline Usage:
     To run the pipeline, enter the following in the command line:
-        nextflow run FILE_PATH/Viral_Discovery_Pipeline/main.nf --input PATH_TO_FASTQ --outdir PATH_TO_OUTPUT_DIR --SingleEnd
+        nextflow run FILE_PATH/Viral_Discovery_Pipeline/main.nf --input 'PATH_TO_FASTQ' --outdir 'PATH_TO_OUTPUT_DIR' --singleEnd
     Valid CLI Arguments:
     REQUIRED:
-      --input                       Path to input fastq.gz folder
-      --outdir                      The output directory where the results will be saved
-
+        --input                       Path to input fastq.gz folder
+        --outdir                      The output directory where the results will be saved
+        --singleEnd                   Specifies that the input fastq files are single end reads
     """.stripIndent()
 }
 // Show help msg
@@ -47,6 +47,7 @@ if (params.helpMsg){
     exit 0
 }
 // Setup Parameters to default values
+params.singleEnd = false
 params.input = false
 params.outdir = false
 params.SETTING = "2:30:10:1:true"
@@ -144,6 +145,7 @@ if(params.singleEnd == false) {
 ////////////////////////////////////////////////////////
 
 workflow {
+    if(params.singleEnd == true) {
     Trimming (
         input_read_ch,
         ADAPTERS_SE,
@@ -162,4 +164,7 @@ workflow {
     Blast (
         Alignment.out[0]
     )
+} else {
+        // paired-end workflow
+    }
 }

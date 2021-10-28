@@ -31,14 +31,16 @@ process Trimming {
     
     /usr/local/miniconda/bin/trimmomatic SE -threads ${task.cpus} ${R1} \$base.trimmed.fastq.gz \
     ILLUMINACLIP:${ADAPTERS_SE}:${SETTING} LEADING:${LEADING} TRAILING:${TRAILING} SLIDINGWINDOW:${SWINDOW} MINLEN:${MINLEN}
+    
     num_untrimmed=\$((\$(gunzip -c ${R1} | wc -l)/4))
     num_trimmed=\$((\$(gunzip -c \$base'.trimmed.fastq.gz' | wc -l)/4))
     printf "\$num_trimmed" >> ${R1}_num_trimmed.txt
     percent_trimmed=\$((100-\$((100*num_trimmed/num_untrimmed))))
+    
     echo Sample_Name,Raw_Reads,Trimmed_Reads,Percent_Trimmed> \$base'_summary.csv'
     printf "\$base,\$num_untrimmed,\$num_trimmed,\$percent_trimmed" >> \$base'_summary.csv'
+    
     ls -latr
-
     """
 }
 /*
@@ -56,17 +58,16 @@ process Denovo_Assembly {
 
 
     output:
-        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv"), file("${base}.scaffolds.fasta")// into Denovo_Assembly_ch
+        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv"), file("${base}.scaffolds.fasta")// into Spades_Assembly_ch
     
     publishDir "${params.outdir}denovo_assembly", mode: 'copy', pattern:'*scaffolds.fasta*'
- 
 
     script:
 
     """
     #!/bin/bash
 
-    /SPAdes-3.15.3-Linux/bin/spades.py -s ${base}.trimmed.fastq.gz -o ${params.outdir}denovo_assembly/
+    /SPAdes-3.15.3-Linux/bin/spades.py -s ${base}.trimmed.fastq.gz -o ${params.outdir}spades/
 
     cp ${base}_summary.csv ${base}_summary1.csv
 
@@ -84,7 +85,7 @@ process Alignment {
     // echo true
 
     input:
-        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv"), file("${base}.scaffolds.fasta")// from Denovo_Assembly_ch
+        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv"), file("${base}.scaffolds.fasta")// from Spades_Assembly_ch
 
     output:
         tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}.scaffolds.fasta"), file("${base}_output.tsv"), file("${base}_all_accession.txt") //  into Alignment_ch   
