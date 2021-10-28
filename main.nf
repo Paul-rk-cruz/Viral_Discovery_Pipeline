@@ -145,13 +145,13 @@ if(params.singleEnd == false) {
 
 workflow {
     Trimming (
-        input_read_ch, 
+        input_read_ch,
         ADAPTERS_SE,
         params.MINLEN,
-        params.SETTING, 
+        params.SETTING,
         params.LEADING,
         params.TRAILING,
-        params.SWINDOW,
+        params.SWINDOW
     )
     Denovo_Assembly (
         Trimming.out[0],
