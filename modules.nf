@@ -49,16 +49,16 @@ process Denovo_Assembly {
     container "docker.io/staphb/spades:latest"
     // errorStrategy 'retry'
     // maxRetries 3
-    echo true
+    // echo true
 
     input:
         tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary.csv")// from Trimming_ch
 
 
     output:
-        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_stats1.csv")// into Align_ch
+        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv"), file("${base}.scaffolds.fasta")// into Denovo_Assembly_ch
     
-    publishDir "${params.outdir}bbmap_scaf_stats", mode: 'copy', pattern:'*_hpvAll_scafstats.txt*'
+    publishDir "${params.outdir}denovo_assembly", mode: 'copy', pattern:'*scaffolds.fasta*'
  
 
     script:
@@ -66,9 +66,9 @@ process Denovo_Assembly {
     """
     #!/bin/bash
 
-    spades.py -s input file -o output directory
+    /SPAdes-3.15.3-Linux/bin/spades.py -s ${base}.trimmed.fastq.gz -o ${params.outdir}denovo_assembly/
 
-    cp ${base}_summary.csv ${base}_stats1.csv
+    cp ${base}_summary.csv ${base}_summary1.csv
 
     """
 }
@@ -78,28 +78,29 @@ process Denovo_Assembly {
  * Sort bam file and collect summary statistics.
  */
 process Alignment { 
-    container "quay.io/greninger-lab/swift-pipeline:latest"
+    container "docker.io/buchfink/diamond:latest"
     // errorStrategy 'retry'
     // maxRetries 3
     // echo true
 
     input:
-        tuple val(base), file("${base}.trimmed.fastq.gz")// from Align_ch
+        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv"), file("${base}.scaffolds.fasta")// from Denovo_Assembly_ch
 
     output:
-        tuple val(base), file("${base}_trim_stats.csv")//  into Analysis_ch   
+        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}.scaffolds.fasta"), file("${base}_output.tsv"), file("${base}_all_accession.txt") //  into Alignment_ch   
 
-    publishDir "${params.outdir}bam_sorted", mode: 'copy', pattern:'*_hpvAll.sorted.bam*'
+    publishDir "${params.outdir}diamond_alignment", mode: 'copy', pattern:'*_output.tsv*'
+    publishDir "${params.outdir}diamond_alignment", mode: 'copy', pattern:'*_all_accession.txt*'    
 
     script:
     """
     #!/bin/bash
 
-    diamond blastx -d nr -q contigs.fasta -o output.tsv
+    diamond blastx -d nr -q ${base}.scaffolds.fasta -o ${base}_output.tsv
 
+    cat ${base}_output.tsv | tr "\t" "~" | cut -d"~" -f2 > ${base}_all_accession.txt
 
-
-    cp ${base}_stats1.csv ${base}_trim_stats.csv
+    cp ${base}_summary1.csv ${base}_summary2.csv
 
     """
 }
@@ -107,18 +108,28 @@ process Alignment {
  * STEP 4: Analysis
  * Analysis summary creation utilizing R script.
  */
-process Analysis {
-    container "docker.io/rocker/tidyverse:latest"
+process Blast {
+    container "docker.io/luciorq/entrez-direct:latest"
     // errorStrategy 'retry'
     // maxRetries 3
     // echo true
 
     input:
-    file("${base}_hpvAll_scafstats.txt")// from Bbmap_scaf_stats_ch.collect()     
+    tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}.scaffolds.fasta"), file("${base}_output.tsv"), file("${base}_all_accession.txt")// from Alignment_ch    
+
+    output:
+    tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}.scaffolds.fasta"), file("${base}_output.tsv"), file("${base}_all_accession.txt"), file("${base}_output.txt")//  into Blast_ch   
+
+    publishDir "${params.outdir}blast", mode: 'copy', pattern:'*_output.txt*'
+    publishDir "${params.outdir}summary", mode: 'copy', pattern:'*_summary.csv*'
 
     script:
     """
+    # Entrez Direct eutils Esummary of protein hits:
 
+    cat ${base}_all_accession.txt | while read line; do esummary -db protein | xtract -pattern DocumentSummary -element Caption,TaxId, Id Title; done >> ${base}_output.txt
+
+    cp ${base}_summary2.csv ${base}_summary.csv
 
     """
 }
