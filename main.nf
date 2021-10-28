@@ -6,9 +6,11 @@
 ========================================================================================
 Github Repo:
 Greninger Lab
+https://github.com/Paul-rk-cruz/Viral_Discovery_Pipeline
 
 Author:
 Paul RK Cruz <kurtisc@uw.edu>
+Kate Juergens <katej16@uw.edu>
 
 UW Medicine | Virology
 Department of Laboratory Medicine and Pathology
