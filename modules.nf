@@ -48,18 +48,20 @@ process Trimming {
  * Align NGS Sequence reads to HPV-ALL multifasta
  */
 process Denovo_Assembly {
-    container "docker.io/staphb/spades:latest"
-    errorStrategy 'retry'
-    maxRetries 3
+    // container "docker.io/staphb/spades:latest"
+    // errorStrategy 'retry'
+    // maxRetries 3
     // echo true
 
     input:
         tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary.csv")// from Trimming_ch
 
     output:
-        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv"), file("${base}.scaffolds.fasta")// into Spades_Assembly_ch
+        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv")// into Spades_Assembly_ch
     
-    publishDir "${params.outdir}denovo_assembly", mode: 'copy', pattern:'*scaffolds.fasta*'
+    publishDir "${params.outdir}denovo_assembly", mode: 'copy', pattern:'*.fasta*'
+    publishDir "${params.outdir}denovo_assembly", mode: 'copy', pattern:'*.info*'
+    publishDir "${params.outdir}denovo_assembly", mode: 'copy', pattern:'*.log*'
 
     script:
 
@@ -70,13 +72,14 @@ process Denovo_Assembly {
     mkdir -p ${params.outdir}denovo_assembly;
     fi;
 
-    /SPAdes-3.15.3-Linux/bin/spades.py -t ${task.cpus} -s ${base}.trimmed.fastq.gz -o '${params.outdir}denovo_assembly/'
+    spades.py -t 8 -s ${base}.trimmed.fastq.gz -o ${params.outdir}denovo_assembly/ --phred-offset 33
 
     cp ${base}_summary.csv ${base}_summary1.csv
 
     """
 }
-// /SPAdes-3.15.3-Linux/bin/
+// /Users/greningerlab/anaconda3/bin/spades.py
+// /SPAdes-3.15.3-Linux/bin/spades.py
 /*
  * STEP 2: Bam_Sorting
  * Sort bam file and collect summary statistics.
@@ -88,10 +91,10 @@ process Alignment {
     // echo true
 
     input:
-        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv"), file("${base}.scaffolds.fasta")// from Spades_Assembly_ch
+        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv")// from Spades_Assembly_ch
 
     output:
-        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}.scaffolds.fasta"), file("${base}_output.tsv"), file("${base}_all_accession.txt") //  into Alignment_ch   
+        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}_output.tsv"), file("${base}_all_accession.txt") //  into Alignment_ch   
 
     publishDir "${params.outdir}diamond_alignment", mode: 'copy', pattern:'*_output.tsv*'
     publishDir "${params.outdir}diamond_alignment", mode: 'copy', pattern:'*_all_accession.txt*'    
@@ -99,6 +102,8 @@ process Alignment {
     script:
     """
     #!/bin/bash
+
+    cp ${params.outdir}denovo_assembly/scaffolds.fasta ${params.outdir}denovo_assembly/${base}_scaffolds.fasta 
 
     diamond blastx -d nr -q ${base}.scaffolds.fasta -o ${base}_output.tsv
 
@@ -119,10 +124,10 @@ process Blast {
     // echo true
 
     input:
-    tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}.scaffolds.fasta"), file("${base}_output.tsv"), file("${base}_all_accession.txt")// from Alignment_ch    
+    tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}_output.tsv"), file("${base}_all_accession.txt")// from Alignment_ch    
 
     output:
-    tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}.scaffolds.fasta"), file("${base}_output.tsv"), file("${base}_all_accession.txt"), file("${base}_output.txt")//  into Blast_ch   
+    tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}_output.tsv"), file("${base}_all_accession.txt"), file("${base}_output.txt")//  into Blast_ch   
 
     publishDir "${params.outdir}blast", mode: 'copy', pattern:'*_output.txt*'
     publishDir "${params.outdir}summary", mode: 'copy', pattern:'*_summary.csv*'
