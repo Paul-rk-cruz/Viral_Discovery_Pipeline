@@ -49,13 +49,12 @@ process Trimming {
  */
 process Denovo_Assembly {
     container "docker.io/staphb/spades:latest"
-    // errorStrategy 'retry'
-    // maxRetries 3
+    errorStrategy 'retry'
+    maxRetries 3
     // echo true
 
     input:
         tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary.csv")// from Trimming_ch
-
 
     output:
         tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv"), file("${base}.scaffolds.fasta")// into Spades_Assembly_ch
@@ -67,13 +66,17 @@ process Denovo_Assembly {
     """
     #!/bin/bash
 
-    /SPAdes-3.15.3-Linux/bin/spades.py -s ${base}.trimmed.fastq.gz -o ${params.outdir}spades/
+    if [ ! -d ${params.outdir}denovo_assembly ]; then
+    mkdir -p ${params.outdir}denovo_assembly;
+    fi;
+
+    /SPAdes-3.15.3-Linux/bin/spades.py -t ${task.cpus} -s ${base}.trimmed.fastq.gz -o '${params.outdir}denovo_assembly/'
 
     cp ${base}_summary.csv ${base}_summary1.csv
 
     """
 }
-// /usr/local/bin/bbmap.sh
+// /SPAdes-3.15.3-Linux/bin/
 /*
  * STEP 2: Bam_Sorting
  * Sort bam file and collect summary statistics.
@@ -128,7 +131,7 @@ process Blast {
     """
     # Entrez Direct eutils Esummary of protein hits:
 
-    cat ${base}_all_accession.txt | while read line; do esummary -db protein | xtract -pattern DocumentSummary -element Caption,TaxId, Id Title; done >> ${base}_output.txt
+    cat ${base}_all_accession.txt | while read line; do /usr/bin/esummary -db protein | xtract -pattern DocumentSummary -element Caption,TaxId, Id Title; done >> ${base}_output.txt
 
     cp ${base}_summary2.csv ${base}_summary.csv
 
