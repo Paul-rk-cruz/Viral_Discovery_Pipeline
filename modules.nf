@@ -48,7 +48,7 @@ process Trimming {
  * Align NGS Sequence reads to HPV-ALL multifasta
  */
 process Denovo_Assembly {
-    // container "docker.io/staphb/spades:latest"
+    // container "docker.io/paulrkcruz/viral_discovery_pipeline:latest"
     // errorStrategy 'retry'
     // maxRetries 3
     // echo true
@@ -85,14 +85,14 @@ process Denovo_Assembly {
  * Sort bam file and collect summary statistics.
  */
 process Alignment { 
-    container "docker.io/buchfink/diamond:latest"
+    // container "docker.io/paulrkcruz/viral_discovery_pipeline:latest"
     // errorStrategy 'retry'
     // maxRetries 3
     // echo true
 
     input:
         tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv")// from Spades_Assembly_ch
-
+        file DIAMOND_DB
     output:
         tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}_output.tsv"), file("${base}_all_accession.txt") //  into Alignment_ch   
 
@@ -103,9 +103,7 @@ process Alignment {
     """
     #!/bin/bash
 
-    cp ${params.outdir}denovo_assembly/scaffolds.fasta ${params.outdir}denovo_assembly/${base}_scaffolds.fasta 
-
-    diamond blastx -d nr -q ${base}.scaffolds.fasta -o ${base}_output.tsv
+    diamond blastx -d ${DIAMOND_DB} -q ${params.outdir}denovo_assembly/${base}_scaffolds.fasta -o ${base}_output.tsv
 
     cat ${base}_output.tsv | tr "\t" "~" | cut -d"~" -f2 > ${base}_all_accession.txt
 
@@ -113,12 +111,13 @@ process Alignment {
 
     """
 }
+// /opt/view/bin/diamond
 /*
  * STEP 4: Analysis
  * Analysis summary creation utilizing R script.
  */
 process Blast {
-    container "docker.io/luciorq/entrez-direct:latest"
+    // container "docker.io/paulrkcruz/viral_discovery_pipeline:latest"
     // errorStrategy 'retry'
     // maxRetries 3
     // echo true

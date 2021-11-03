@@ -84,6 +84,8 @@ try {
 }
 // Setup file paths
 ADAPTERS_SE = file("${baseDir}/adapters/TruSeq2-SE.fa")
+// Diamond database
+DIAMOND_DB = file("${baseDir}/db/nr.dmnd")
 // Workflow display header
 def hpvheader() {
     return """
@@ -159,7 +161,8 @@ workflow {
         Trimming.out[0],
     )
     Alignment (
-        Denovo_Assembly.out[0]
+        Denovo_Assembly.out[0],
+        DIAMOND_DB
     )
     Blast (
         Alignment.out[0]
