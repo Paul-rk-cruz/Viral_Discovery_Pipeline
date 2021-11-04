@@ -103,6 +103,8 @@ process Alignment {
     """
     #!/bin/bash
 
+    cp ${params.outdir}denovo_assembly/scaffolds.fasta ${params.outdir}denovo_assembly/${base}_scaffolds.fasta
+
     diamond blastx -d ${DIAMOND_DB} -q ${params.outdir}denovo_assembly/${base}_scaffolds.fasta -o ${base}_output.tsv
 
     cat ${base}_output.tsv | tr "\t" "~" | cut -d"~" -f2 > ${base}_all_accession.txt
@@ -126,7 +128,7 @@ process Blast {
     tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}_output.tsv"), file("${base}_all_accession.txt")// from Alignment_ch    
 
     output:
-    tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}_output.tsv"), file("${base}_all_accession.txt"), file("${base}_output.txt")//  into Blast_ch   
+    tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary.csv"), file("${base}_output.tsv"), file("${base}_all_accession.txt"), file("${base}_output.txt")//  into Blast_ch   
 
     publishDir "${params.outdir}blast", mode: 'copy', pattern:'*_output.txt*'
     publishDir "${params.outdir}summary", mode: 'copy', pattern:'*_summary.csv*'
@@ -135,7 +137,7 @@ process Blast {
     """
     # Entrez Direct eutils Esummary of protein hits:
 
-    cat ${base}_all_accession.txt | while read line; do /usr/bin/esummary -db protein | xtract -pattern DocumentSummary -element Caption,TaxId, Id Title; done >> ${base}_output.txt
+    cat ${base}_all_accession.txt | while read line; do esummary -db protein | xtract -pattern DocumentSummary -element Caption,TaxId, Id Title; done >> ${base}_output.txt
 
     cp ${base}_summary2.csv ${base}_summary.csv
 
