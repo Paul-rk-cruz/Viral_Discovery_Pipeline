@@ -83,6 +83,7 @@ try {
 	log.error"ERROR: This version of Nextflow is out of date.\nPlease update to the latest version of Nextflow."
 }
 // Setup file paths
+FIND_VIRUSES_PY = file("${baseDir}/scripts/find_viruses.py")
 ADAPTERS_SE = file("${baseDir}/adapters/TruSeq2-SE.fa")
 // Diamond database
 DIAMOND_DB = file("${baseDir}/db/nr.dmnd")
@@ -121,7 +122,7 @@ log.info "______________________________________________________________________
 include { Trimming } from './modules.nf'
 include { Denovo_Assembly } from './modules.nf'
 include { Alignment } from './modules.nf'
-include { Blast } from './modules.nf'
+include { Generate_Summary } from './modules.nf'
 
 // Create channel for input reads: single-end or paired-end
 if(params.singleEnd == false) {
@@ -164,8 +165,9 @@ workflow {
         Denovo_Assembly.out[0],
         DIAMOND_DB
     )
-    Blast (
-        Alignment.out[0]
+    Generate_Summary (
+        Alignment.out[0],
+        FIND_VIRUSES_PY        
     )
 } else {
         // paired-end workflow

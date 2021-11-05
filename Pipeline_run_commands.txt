@@ -1,0 +1,34 @@
+----------------------------------------------------------------------------------------------------------------
+ 				Viral Discovery Pipeline v1.0
+-------------------------------------------------------------------------------------------------------------------
+Command-line syntax to launch Viral Discovery Pipeline
+
+PARAMETERS, FILE & DIRECTORY PATHS:
+
+PATH_PIPELINE			Path to pipeline in local directory.
+PATH_INPUT				Path to input directory containing fastq.gz files.
+PATH_OUTPUT			Path to pipeline file output directory.
+
+LOCAL:
+nextflow run PATH_PIPELINE/Viral_Discovery_Pipeline/main.nf --input 'PATH_INPUT/' --outdir 'PATH_OUTPUT/' --singleEnd -resume
+
+IN TESTING:
+CLOUD:
+nextflow run PATH_PIPELINE/Viral_Discovery_Pipeline/main.nf --input 'PATH_INPUT/' --outdir 'PATH_OUTPUT/' -with-docker ubuntu:18.04   -c PATH_PIPELINE/Viral_Discovery_Pipeline/config/nextflow.config -profile cloud_big --singleEnd -resume
+
+MANDATORY:
+--singleEnd
+
+OPTIONAL:
+-with-trace -with-timeline
+-with-report PATH_OUTPUT/report.html
+-resume
+
+* /HPV_Pipeline/config/nextflow.config includes AWS cloud cluster settings vital for utilizing the aws cluster
+* CLOUD Mode allows for input and outdir to be in AWS S3.
+
+EXAMPLE PIPELINE LAUNCH:
+
+LOCAL:
+nextflow run /Users/greningerlab/Documents/KC/Pipelines/Viral_Discovery_Pipeline/main.nf --input '/Users/greningerlab/Documents/KC/Pipeline_Runs/VD-PL_Testing/DV-PL_input/' --outdir '/Users/greningerlab/Documents/KC/Pipeline_Runs/VD-PL_Testing/DV-PL_output/' --singleEnd -resume
+

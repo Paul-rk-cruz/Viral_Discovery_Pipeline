@@ -44,8 +44,8 @@ process Trimming {
     """
 }
 /*
- * STEP 2: Alignment
- * Align NGS Sequence reads to HPV-ALL multifasta
+ * STEP 2: Denovo_Assembly
+ * Denovo assembly of sequence reads
  */
 process Denovo_Assembly {
     // container "docker.io/paulrkcruz/viral_discovery_pipeline:latest"
@@ -81,8 +81,8 @@ process Denovo_Assembly {
 // /Users/greningerlab/anaconda3/bin/spades.py
 // /SPAdes-3.15.3-Linux/bin/spades.py
 /*
- * STEP 2: Bam_Sorting
- * Sort bam file and collect summary statistics.
+ * STEP 3: Alignment
+ * Aligns using diamond blastsx.
  */
 process Alignment { 
     // container "docker.io/paulrkcruz/viral_discovery_pipeline:latest"
@@ -115,10 +115,10 @@ process Alignment {
 }
 // /opt/view/bin/diamond
 /*
- * STEP 4: Analysis
- * Analysis summary creation utilizing R script.
+ * STEP 4: Generate_Summary
+ * Generates the run summary using a python script.
  */
-process Blast {
+process Generate_Summary {
     // container "docker.io/paulrkcruz/viral_discovery_pipeline:latest"
     // errorStrategy 'retry'
     // maxRetries 3
@@ -126,18 +126,19 @@ process Blast {
 
     input:
     tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}_output.tsv"), file("${base}_all_accession.txt")// from Alignment_ch    
+    file FIND_VIRUSES_PY
 
     output:
-    tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary.csv"), file("${base}_output.tsv"), file("${base}_all_accession.txt"), file("${base}_output.txt")//  into Blast_ch   
+    tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary.csv"), file("${base}_output.tsv"), file("${base}_all_accession.txt"), file("${base}_output.tsv.xlsx")//  into Blast_ch   
 
-    publishDir "${params.outdir}blast", mode: 'copy', pattern:'*_output.txt*'
-    publishDir "${params.outdir}summary", mode: 'copy', pattern:'*_summary.csv*'
+    publishDir "${params.outdir}summary", mode: 'copy', pattern:'*.csv*'
+    publishDir "${params.outdir}summary", mode: 'copy', pattern:'*.xlsx*'
 
     script:
     """
-    # Entrez Direct eutils Esummary of protein hits:
+    #!/bin/bash
 
-    cat ${base}_all_accession.txt | while read line; do esummary -db protein | xtract -pattern DocumentSummary -element Caption,TaxId, Id Title; done >> ${base}_output.txt
+    python3 ${FIND_VIRUSES_PY} ${base}_output.tsv
 
     cp ${base}_summary2.csv ${base}_summary.csv
 
