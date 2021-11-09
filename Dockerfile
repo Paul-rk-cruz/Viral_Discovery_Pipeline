@@ -1,64 +1,38 @@
-FROM ubuntu:16.04
+FROM ubuntu:latest
+MAINTAINER Paul RK Cruz
+LABEL version="1.0"
+LABEL description="Viral Discovery Pipeline v1.0 - Docker Dependencies "
 
-# install dependencies from pip3
+# INSTALL SYSTEM DEPENDENCIES
+RUN apt-get clean
+RUN apt-get update
+RUN apt-get upgrade -y
+RUN apt-get install build-essential -y
+RUN apt install git -y
+RUN apt-get install -y perl
+RUN apt-get install -y libexpat1-dev
+RUN apt-get install -qy git
+RUN apt-get install -qy locales
+RUN apt-get install -qy nano
+RUN apt-get install -qy tmux
+RUN apt-get install -qy wget
+RUN apt-get install -qy python3
+RUN apt-get install -qy python3-psycopg2
+RUN apt-get install -qy python3-pystache
+RUN apt-get install -qy python3-yaml
+RUN apt-get install -qy curl
+RUN apt-get install -qy cpanminus
 
-RUN apt update && \
-    apt install -y python3 ncbi-blast+ && \
-    apt install -y python-biopython \
-                   python3-pip \
-                   wget \
-                   unzip
-
-# Install dependencies from conda 
-RUN cd /usr/local/ && \
-    wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
-    bash Miniconda3-latest-Linux-x86_64.sh -b -p /usr/local/miniconda && \
-    rm Miniconda3-latest-Linux-x86_64.sh && \
-    ln -s /usr/local/miniconda/bin/conda /usr/local/bin/ && \
-    conda init bash && \
-    /bin/bash -c "source /root/.bashrc" && \
-    conda install -c bioconda seqtk bowtie2 krakenuniq kallisto gmap snap-aligner samtools openssl bedtools bwa mafft bcftools tabix && \
-    conda clean -afy
-# Install Picard 
-
-# Install PrimerClip 
-RUN wget -qO- https://get.haskellstack.org/ | sh
-#RUN /usr/local/bin/stack build 
-RUN wget https://github.com/michellejlin/covid_swift_pipeline/releases/download/v0.1-alpha/primerclip-deltest.zip && unzip primerclip-deltest.zip && cd /primerclip-deltest/ && /usr/local/bin/stack build&&  /usr/local/bin/stack install && cd .. 
-
-# Install homebrew
-RUN apt-get install build-essential procps curl file git
-
-# Install DIamond-Align
-RUN brew install diamond
-
-# Install NCBI entrez direct
-RUN apt install ncbi-entrez-direct
-
-# Install spades denovo assembly
-RUN brew install spades
-
-
-##########
-# JAVA 8 #
-##########
-
-# Install OpenJDK-8
-RUN apt-get update && \
-    apt-get install -y openjdk-8-jdk && \
-    apt-get install -y ant && \
-    apt-get clean;
-
-# Fix certificate issues
-RUN apt-get update && \
-    apt-get install ca-certificates-java && \
-    apt-get clean && \
-    update-ca-certificates -f;
-
-# Setup JAVA_HOME -- useful for docker commandline
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
-RUN export JAVA_HOME
-
-
+# INSTALL HOMEBREW & PIPELINE DEPENDENCIES
+RUN git clone https://github.com/Homebrew/brew ~/.linuxbrew/Homebrew \
+&& mkdir ~/.linuxbrew/bin \
+&& ln -s ../Homebrew/bin/brew ~/.linuxbrew/bin \
+&& eval $(~/.linuxbrew/bin/brew shellenv) \
+&& brew install diamond \
+&& brew install spades \
+&& brew --version 
+ 
+# CLEANUP DOCKER FILE SYSTEM
+RUN apt-get -qy autoremove
 
 CMD ["/bin/bash"]
