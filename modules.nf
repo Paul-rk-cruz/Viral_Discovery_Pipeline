@@ -5,8 +5,8 @@
  */
 process Trimming {
     container "docker.io/paulrkcruz/hrv-pipeline:latest"
-    // errorStrategy 'retry'
-    // maxRetries 3
+    errorStrategy 'retry'
+    maxRetries 3
     // echo true
 
     input:
@@ -49,8 +49,8 @@ process Trimming {
  */
 process Denovo_Assembly {
     // container "docker.io/paulrkcruz/viral_discovery_pipeline:latest"
-    // errorStrategy 'retry'
-    // maxRetries 3
+    errorStrategy 'retry'
+    maxRetries 3
     // echo true
 
     input:
@@ -72,14 +72,14 @@ process Denovo_Assembly {
     mkdir -p ${params.outdir}denovo_assembly;
     fi;
 
-    spades.py -t 8 -s ${base}.trimmed.fastq.gz -o ${params.outdir}denovo_assembly/ --phred-offset 33
+    /Users/greningerlab/anaconda3/bin/spades.py -t 8 -s ${base}.trimmed.fastq.gz -o ${params.outdir}denovo_assembly/ --phred-offset 33
 
     cp ${base}_summary.csv ${base}_summary1.csv
 
     """
 }
 // /Users/greningerlab/anaconda3/bin/spades.py
-// /SPAdes-3.15.3-Linux/bin/spades.py
+// /root/.linuxbrew/Cellar/spades/3.15.3/bin/
 /*
  * STEP 3: Alignment
  * Aligns using diamond blastsx.

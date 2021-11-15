@@ -171,5 +171,5 @@ workflow {
     )
 } else {
         // paired-end workflow
-    }
+    }/
 }

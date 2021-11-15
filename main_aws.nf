@@ -120,9 +120,9 @@ log.info "______________________________________________________________________
 // 
 
 include { Trimming } from './modules_aws.nf'
-include { Denovo_Assembly } from './modules.nf'
-include { Alignment } from './modules.nf'
-include { Generate_Summary } from './modules.nf'
+include { Denovo_Assembly } from './modules_aws.nf'
+include { Alignment } from './modules_aws.nf'
+include { Generate_Summary } from './modules_aws.nf'
 
 // Create channel for input reads: single-end or paired-end
 if(params.singleEnd == false) {

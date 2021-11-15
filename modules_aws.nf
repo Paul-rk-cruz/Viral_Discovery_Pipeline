@@ -10,15 +10,15 @@ process Trimming {
     // echo true
 
     input:
-        file R1 //from input_read_ch
-        file ADAPTERS_SE
+        path R1 //from input_read_ch
+        path ADAPTERS_SE
         val MINLEN
         val SETTING
         val LEADING
         val TRAILING
         val SWINDOW
     output:
-        tuple env(base),file("*.trimmed.fastq.gz"), file("*summary.csv")// into Trimming_ch
+        tuple env(base),path("*.trimmed.fastq.gz"), path("*summary.csv")// into Trimming_ch
 
     publishDir "${params.outdir}trimmed_fastqs", mode: 'copy',pattern:'*.trimmed.fastq*'
 
@@ -54,10 +54,10 @@ process Denovo_Assembly {
     // echo true
 
     input:
-        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary.csv")// from Trimming_ch
+        tuple val(base), path("${base}.trimmed.fastq.gz"), path("${base}_summary.csv")// from Trimming_ch
 
     output:
-        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv")// into Spades_Assembly_ch
+        tuple val(base), path("${base}.trimmed.fastq.gz"), path("${base}_summary1.csv")// into Spades_Assembly_ch
     
     publishDir "${params.outdir}denovo_assembly", mode: 'copy', pattern:'*.fasta*'
     publishDir "${params.outdir}denovo_assembly", mode: 'copy', pattern:'*.info*'
@@ -73,6 +73,8 @@ process Denovo_Assembly {
     fi;
 
     /root/.linuxbrew/Cellar/spades/3.15.3/bin/spades.py -t 8 -s ${base}.trimmed.fastq.gz -o ${params.outdir}denovo_assembly/ --phred-offset 33
+
+    cp ${params.outdir}denovo_assembly/scaffolds.fasta ${params.outdir}denovo_assembly/${base}_scaffolds.fasta
 
     cp ${base}_summary.csv ${base}_summary1.csv
 
@@ -91,10 +93,10 @@ process Alignment {
     // echo true
 
     input:
-        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary1.csv")// from Spades_Assembly_ch
-        file DIAMOND_DB
+        tuple val(base), path("${base}.trimmed.fastq.gz"), path("${base}_summary1.csv")// from Spades_Assembly_ch
+        path DIAMOND_DB
     output:
-        tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}_output.tsv"), file("${base}_all_accession.txt") //  into Alignment_ch   
+        tuple val(base), path("${base}.trimmed.fastq.gz"), path("${base}_summary2.csv"), path("${base}_output.tsv"), path("${base}_all_accession.txt") //  into Alignment_ch   
 
     publishDir "${params.outdir}diamond_alignment", mode: 'copy', pattern:'*_output.tsv*'
     publishDir "${params.outdir}diamond_alignment", mode: 'copy', pattern:'*_all_accession.txt*'    
@@ -103,9 +105,7 @@ process Alignment {
     """
     #!/bin/bash
 
-    cp ${params.outdir}denovo_assembly/scaffolds.fasta ${params.outdir}denovo_assembly/${base}_scaffolds.fasta
-
-    /root/.linuxbrew/Cellar/diamond/2.0.12/bin/diamond blastx -d ${DIAMOND_DB} -q ${params.outdir}denovo_assembly/${base}_scaffolds.fasta -o ${base}_output.tsv
+    /root/.linuxbrew/Cellar/diamond/2.0.12/bin/./diamond blastx -d ${DIAMOND_DB} -q ${params.outdir}denovo_assembly/${base}_scaffolds.fasta -o ${base}_output.tsv
 
     cat ${base}_output.tsv | tr "\t" "~" | cut -d"~" -f2 > ${base}_all_accession.txt
 
@@ -125,11 +125,11 @@ process Generate_Summary {
     // echo true
 
     input:
-    tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary2.csv"), file("${base}_output.tsv"), file("${base}_all_accession.txt")// from Alignment_ch    
-    file FIND_VIRUSES_PY
+    tuple val(base), path("${base}.trimmed.fastq.gz"), path("${base}_summary2.csv"), path("${base}_output.tsv"), path("${base}_all_accession.txt")// from Alignment_ch    
+    path FIND_VIRUSES_PY
 
     output:
-    tuple val(base), file("${base}.trimmed.fastq.gz"), file("${base}_summary.csv"), file("${base}_output.tsv"), file("${base}_all_accession.txt"), file("${base}_output.tsv.xlsx")//  into Blast_ch   
+    tuple val(base), path("${base}.trimmed.fastq.gz"), path("${base}_summary.csv"), path("${base}_output.tsv"), path("${base}_all_accession.txt"), path("${base}_output.tsv.xlsx")//  into Blast_ch   
 
     publishDir "${params.outdir}summary", mode: 'copy', pattern:'*.csv*'
     publishDir "${params.outdir}summary", mode: 'copy', pattern:'*.xlsx*'
