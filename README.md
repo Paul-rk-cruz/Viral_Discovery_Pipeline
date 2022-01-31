@@ -1,5 +1,5 @@
 # Viral Discovery Pipeline v1.0
-Viral Discovery Pipeline is designed to denovo assemble and align Next-Generation sequencing reads for viral discovery.
+Viral Discovery Pipeline denovo assembles and aligns Next-Generation Sequencing reads for viral discovery and outputs summary statistics.
 
 Github Repo: https://github.com/Paul-rk-cruz/Viral_Discovery_Pipeline
  
